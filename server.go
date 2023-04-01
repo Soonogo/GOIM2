@@ -47,12 +47,10 @@ func (s *Server) Handler(conn net.Conn) {
 
 	fmt.Println("accept successful")
 
-	user := NewUser(conn)
+	user := NewUser(conn, s)
 
 	//用户上线，加入onlineMap
-	s.mapLock.Lock()
-	s.OnlineMap[user.Name] = user
-	s.mapLock.Unlock()
+	user.OnLine()
 	//广播
 
 	s.BroadCast(user, "上线了")
@@ -62,7 +60,7 @@ func (s *Server) Handler(conn net.Conn) {
 		for {
 			n, err := conn.Read(buf)
 			if n == 0 {
-				s.BroadCast(user, "下线了")
+				user.OffLine()
 				return
 			}
 			if err != nil && err != io.EOF {
@@ -70,7 +68,7 @@ func (s *Server) Handler(conn net.Conn) {
 				return
 			}
 			msg := string(buf[:n-1])
-			s.BroadCast(user, msg)
+			user.DoMessage(msg)
 		}
 	}()
 
