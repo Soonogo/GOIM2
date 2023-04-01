@@ -81,7 +81,7 @@ func (s *Server) Handler(conn net.Conn) {
 		select {
 		case <-isLive:
 
-		case <-time.After(time.Second * 3):
+		case <-time.After(time.Second * 300):
 			user.SendMsg("超时未发送消息，踢出下线。")
 			conn.Close()
 			close(user.C)

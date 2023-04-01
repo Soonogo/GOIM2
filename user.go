@@ -74,6 +74,22 @@ func (u *User) DoMessage(msg string) {
 			u.Name = newName
 			u.SendMsg("用户名已更新为：" + newName)
 		}
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+		// format:  to|Jack|hello
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			u.SendMsg("格式不正确，请输入\"to|Jack|Welcome\"")
+		}
+		remoteUser, ok := u.server.OnlineMap[remoteName]
+		if !ok {
+			u.SendMsg("用户不存在")
+			return
+		}
+		remoteMsg := strings.Split(msg, "|")[2]
+		if remoteMsg == "" {
+			u.SendMsg("内容不能为空")
+		}
+		remoteUser.SendMsg(u.Name + "对你说：" + remoteMsg)
 
 	} else {
 
