@@ -44,8 +44,24 @@ func (u *User) OffLine() {
 
 	u.server.BroadCast(u, "下线了")
 }
+
+func (u *User) SendMsg(msg string) {
+	u.conn.Write([]byte(msg))
+}
 func (u *User) DoMessage(msg string) {
-	u.server.BroadCast(u, msg)
+	if msg == "who" {
+		u.server.mapLock.Lock()
+		for _, us := range u.server.OnlineMap {
+			onLineMap := "[" + us.Addr + "]" + ":" + "在线\n"
+			u.C <- onLineMap
+			//u.SendMsg(onLineMap)
+		}
+		u.server.mapLock.Unlock()
+	} else {
+
+		u.server.BroadCast(u, msg)
+	}
+
 }
 
 func (u *User) ListenMessage() {
