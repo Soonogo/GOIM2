@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -44,7 +45,6 @@ func (s *Server) ListenMessager() {
 
 func (s *Server) Handler(conn net.Conn) {
 
-	fmt.Println(conn)
 	fmt.Println("accept successful")
 
 	user := NewUser(conn)
@@ -56,6 +56,23 @@ func (s *Server) Handler(conn net.Conn) {
 	//广播
 
 	s.BroadCast(user, "上线了")
+
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buf)
+			if n == 0 {
+				s.BroadCast(user, "下线了")
+				return
+			}
+			if err != nil && err != io.EOF {
+				fmt.Println("Conn Read Error:", err)
+				return
+			}
+			msg := string(buf[:n-1])
+			s.BroadCast(user, msg)
+		}
+	}()
 
 	select {}
 }
