@@ -3,24 +3,63 @@ package main
 import (
 	"fmt"
 	"net"
+	"sync"
 )
 
 type Server struct {
-	Ip   string `"json:ip"`
-	Port int    `"json:port"`
+	Ip   string
+	Port int
+
+	OnlineMap map[string]*User
+	mapLock   sync.RWMutex
+
+	Message chan string
 }
 
 func NewServer(ip string, port int) *Server {
 	server := &Server{
-		Ip:   ip,
-		Port: port,
+		Ip:        ip,
+		Port:      port,
+		OnlineMap: make(map[string]*User),
+		Message:   make(chan string),
 	}
 	return server
 }
-func (s *Server) Handler(conn *net.Conn) {
-	fmt.Println(*conn)
-	fmt.Println("accept successful")
+func (s *Server) BroadCast(user *User, msg string) {
+	sendMsg := "[" + user.Name + "]" + ":" + msg
+
+	s.Message <- sendMsg
 }
+
+func (s *Server) ListenMessager() {
+	for {
+		msg := <-s.Message
+		s.mapLock.Lock()
+		for _, cli := range s.OnlineMap {
+			cli.C <- msg
+		}
+		s.mapLock.Unlock()
+	}
+}
+
+func (s *Server) Handler(conn net.Conn) {
+
+	fmt.Println(conn)
+	fmt.Println("accept successful")
+
+	user := NewUser(conn)
+
+	//用户上线，加入onlineMap
+	s.mapLock.Lock()
+	s.OnlineMap[user.Name] = user
+	s.mapLock.Unlock()
+	//广播
+
+	s.BroadCast(user, "上线了")
+
+	select {}
+}
+
 func (s *Server) Start() {
 	// socket listening
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.Ip, s.Port))
@@ -32,6 +71,9 @@ func (s *Server) Start() {
 	//closes
 	defer listener.Close()
 
+	//启动监听Message的gorutine
+	go s.ListenMessager()
+
 	for {
 
 		//accept
@@ -41,7 +83,7 @@ func (s *Server) Start() {
 			continue
 		}
 		//handlers
-		go s.Handler(&conn)
+		go s.Handler(conn)
 	}
 
 }
