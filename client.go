@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 type Client struct {
@@ -37,6 +39,21 @@ func init() {
 	flag.StringVar(&serverIP, "ip", "127.0.0.1", "设置链接ip地址")
 	flag.IntVar(&serverPort, "port", 8090, "设置链接port")
 }
+func (c *Client) UpdateName() bool {
+	fmt.Println("请输入用户名...")
+	fmt.Scanln(&c.Name)
+
+	sendMsg := "rename|" + c.Name + "\n"
+	_, err := c.Conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn Write error:", err)
+		return false
+	}
+	return true
+}
+func (c *Client) DealResponse() {
+	io.Copy(os.Stdout, c.Conn)
+}
 func (c *Client) Run() {
 	for c.flag != 0 {
 		for c.Menu() != true {
@@ -51,7 +68,7 @@ func (c *Client) Run() {
 			break
 
 		case 3:
-			fmt.Println("更名")
+			c.UpdateName()
 			break
 
 		}
@@ -82,6 +99,7 @@ func main() {
 		fmt.Println("=======>链接失败<=======")
 		return
 	}
+	go client.DealResponse()
 	fmt.Println("=======>链接成功<=======")
 	client.Run()
 }
