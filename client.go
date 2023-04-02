@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 )
@@ -27,8 +28,17 @@ func NewClient(serverIP string, serverPort int) *Client {
 	return client
 }
 
+var serverIP string
+var serverPort int
+
+func init() {
+	flag.StringVar(&serverIP, "ip", "127.0.0.1", "设置链接ip地址")
+	flag.IntVar(&serverPort, "port", 8090, "设置链接port")
+}
+
 func main() {
-	client := NewClient("127.0.0.1", 8090)
+	flag.Parse()
+	client := NewClient(serverIP, serverPort)
 	if client == nil {
 		fmt.Println("=======>链接失败<=======")
 		return
