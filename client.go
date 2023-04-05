@@ -51,6 +51,44 @@ func (c *Client) UpdateName() bool {
 	}
 	return true
 }
+func (c *Client) SelectUsers() {
+	sendMsg := "who\n"
+	_, err := c.Conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn Write error:", err)
+		return
+	}
+}
+func (c *Client) PrivateChat() {
+	var remoteName string
+	var chatMsg string
+
+	c.SelectUsers()
+	fmt.Println("请输入用户名>>>,exit退出")
+	fmt.Scanln(&remoteName)
+
+	for remoteName != "exit" {
+		fmt.Println("请输入消息内容>>>,exit退出")
+		fmt.Scanln(&chatMsg)
+		for chatMsg != "exit" {
+			if len(chatMsg) != 0 {
+				sendMsg := "to|" + remoteName + "|" + chatMsg + "\n"
+				_, err := c.Conn.Write([]byte(sendMsg))
+				if err != nil {
+					fmt.Println("conn Write error:", err)
+					return
+				}
+			}
+
+			chatMsg = ""
+			fmt.Println("请输入消息内容>>>,exit退出")
+			fmt.Scanln(&chatMsg)
+		}
+		c.SelectUsers()
+		fmt.Println("请输入用户名>>>,exit退出")
+		fmt.Scanln(&remoteName)
+	}
+}
 func (c *Client) PublicChat() {
 	var chatMsg string
 
@@ -86,7 +124,7 @@ func (c *Client) Run() {
 			break
 
 		case 2:
-			fmt.Println("私聊模式")
+			c.PrivateChat()
 			break
 
 		case 3:
